@@ -7,7 +7,6 @@
 //      death_year: anno di morte, numero opzionale
 //      biography: breve biografia, stringa
 //      image: URL dell'immagine, stringa
-
 type Person = {
   readonly id: number;
   readonly name: string;
@@ -23,7 +22,6 @@ type Person = {
 //  awards: una stringa
 //  nationality: una stringa tra un insieme definito di valori.
 //      Le nazionalità accettate sono: American, British, Australian, Israeli-American, South African, French, Indian, Israeli, Spanish, South Korean, Chinese.
-
 type Actress = Person & {
   most_famous_movies: [string, string, string];
   awards: string;
@@ -46,7 +44,6 @@ type Actress = Person & {
 //  GET /actresses/:id
 // La funzione deve restituire l’oggetto Actress, se esiste, oppure null se non trovato.
 // Utilizza un type guard chiamato isActress per assicurarti che la struttura del dato ricevuto sia corretta.
-
 function isActress(data: unknown): data is Actress {
   if (
     data &&
@@ -87,12 +84,32 @@ async function getActress(id: number): Promise<Actress | null> {
 //  GET /actresses
 // La funzione deve restituire un array di oggetti Actress.
 // Può essere anche un array vuoto.
+async function getAllActresses(): Promise<Actress[]> {
+  try {
+    const res = await fetch("http://localhost:5000/actresses");
+    if (!res.ok) {
+      throw new Error(`Errore ${res.status}: ${res.statusText}`);
+    }
+    const data: unknown[] = await res.json();
+    if (Array.isArray(data) && data.every(isActress)) {
+      return data;
+    }
+
+    return [];
+  } catch (error) {
+    throw new Error("Dati non validi");
+  }
+}
 
 // 📌 Milestone 5
 // Crea una funzione getActresses che riceve un array di numeri (gli id delle attrici).
 // Per ogni id nell’array, usa la funzione getActress che hai creato nella Milestone 3 per recuperare l’attrice corrispondente.
 // L'obiettivo è ottenere una lista di risultati in parallelo, quindi dovrai usare Promise.all.
 // La funzione deve restituire un array contenente elementi di tipo Actress oppure null (se l’attrice non è stata trovata).
+async function getActresses(ids: number[]): Promise<(Actress | null)[]> {
+  const promises = ids.map((id: number) => getActress(id));
+  return Promise.all(promises);
+}
 
 // 🎯 BONUS 1
 // Crea le funzioni:
