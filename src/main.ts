@@ -44,16 +44,49 @@ type Actress = Person & {
 //  GET /actresses/:id
 // La funzione deve restituire l’oggetto Actress, se esiste, oppure null se non trovato.
 // Utilizza un type guard chiamato isActress per assicurarti che la struttura del dato ricevuto sia corretta.
+const actressNationalities = [
+  "American",
+  "British",
+  "Australian",
+  "Israeli-American",
+  "South African",
+  "French",
+  "Indian",
+  "Israeli",
+  "Spanish",
+  "South Korean",
+  "Chinese",
+];
+
 function isActress(data: unknown): data is Actress {
   if (
+    // controlli generici
     data &&
     typeof data === "object" &&
+    data !== null &&
+    // Person
+    "id" in data &&
+    typeof data.id === "number" &&
+    "name" in data &&
+    typeof data.name === "string" &&
+    "birth_year" in data &&
+    typeof data.birth_year === "number" &&
+    "death_year" in data &&
+    typeof data.death_year === "number" &&
+    "biography" in data &&
+    typeof data.biography === "string" &&
+    "image" in data &&
+    typeof data.image === "string" &&
+    // Actress
     "most_famous_movies" in data &&
-    typeof data.most_famous_movies === "string" &&
+    data.most_famous_movies instanceof Array &&
+    data.most_famous_movies.length === 3 &&
+    data.most_famous_movies.every((m) => typeof m === "string") &&
     "awards" in data &&
     typeof data.awards === "string" &&
     "nazionality" in data &&
-    typeof data.nazionality === "string"
+    typeof data.nazionality === "string" &&
+    actressNationalities.includes(data.nazionality)
   ) {
     return true;
   }
@@ -74,6 +107,8 @@ async function getActress(id: number): Promise<Actress | null> {
   } catch (error) {
     if (error instanceof Error) {
       console.log("Errore:", error.message);
+    } else {
+      console.log("Errore sconosciuto:", error);
     }
     return null;
   }
@@ -91,12 +126,17 @@ async function getAllActresses(): Promise<Actress[]> {
       throw new Error(`Errore ${res.status}: ${res.statusText}`);
     }
     const data: unknown[] = await res.json();
-    if (Array.isArray(data) && data.every(isActress)) {
-      return data;
-    }
+    // if (Array.isArray(data) && data.every(isActress)) {
+    //   return data;
+    // }
+    const attriciPresenti = data.filter(isActress);
+    return attriciPresenti;
 
-    return [];
+    // return [];
   } catch (error) {
+    if (error instanceof Error) {
+      console.error("Errore nel recupero dei dati", error);
+    }
     throw new Error("Dati non validi");
   }
 }
@@ -107,8 +147,17 @@ async function getAllActresses(): Promise<Actress[]> {
 // L'obiettivo è ottenere una lista di risultati in parallelo, quindi dovrai usare Promise.all.
 // La funzione deve restituire un array contenente elementi di tipo Actress oppure null (se l’attrice non è stata trovata).
 async function getActresses(ids: number[]): Promise<(Actress | null)[]> {
-  const promises = ids.map((id: number) => getActress(id));
-  return Promise.all(promises);
+  try {
+    const promises = ids.map((id: number) => getActress(id));
+    return await Promise.all(promises);
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error("Errore durante il recupero dei dati:", error);
+    } else {
+      console.error("Errore:", error);
+    }
+    return [];
+  }
 }
 
 // 🎯 BONUS 1
@@ -118,6 +167,11 @@ async function getActresses(ids: number[]): Promise<(Actress | null)[]> {
 // Utilizza gli Utility Types:
 //  Omit: per creare un'attrice senza passare id, che verrà generato casualmente.
 //  Partial: per permettere l’aggiornamento di qualsiasi proprietà tranne id e name.
+
+// function createActress(newActress: Actress): <Actress> {
+
+// return newActress;
+// }
 
 // 🎯 BONUS 2
 // Crea un tipo Actor, che estende Person con le seguenti differenze rispetto ad Actress:
